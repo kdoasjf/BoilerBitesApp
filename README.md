@@ -6,12 +6,6 @@ Developing an app that makes the decision of where to eat easier for Purdue Stud
 
 I am trying to solve the issue of choosing where to eat at Purdue University. Many people have food preferences, restrictions, and allergies, so I want to make the choice easy for students and make the choose for them. I will recommend a dining hall/retail store/restaurant within Purdue that takes into consideration their food preferences, allergies, dietary restrictions, etc. 
 
-## How It Works
-
-A paragraph or a few bullets explaining what the software does at a
-high level. If you have a diagram, embed it here:
-
-![System diagram](docs/diagram.png)
 
 ## Tech Stack
 
