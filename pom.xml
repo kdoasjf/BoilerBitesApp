@@ -1,0 +1,21 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.kirtan.projects</groupId>
+    <artifactId>dining-hall-app</artifactId>
+    <version>1.0.0</version>
+	
+    <dependencies>
+        <dependency>
+           <groupId>com.fasterxml.jackson.core</groupId>
+           <artifactId>jackson-databind</artifactId>
+	   <version>2.20.1</version>
+        </dependency>
+    </dependencies>
+    
+    <properties>
+	 <maven.compiler.release>21</maven.compiler.release>
+	 <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+</project>
