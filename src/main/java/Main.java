@@ -5,6 +5,7 @@ import java.net.http.HttpResponse;
 import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDate;
 
 public class Main {
 
@@ -29,10 +30,8 @@ public class Main {
         JsonNode meals = root.get("Meals");
         int matchingCount = 0;
         for(JsonNode mealType : meals) {
-            //System.out.println(mealType.get("Name").asText());
             JsonNode station = mealType.get("Stations");
             for(JsonNode stationType : station) {
-                //System.out.println("\t" + stationType.get("Name").asText());
                 JsonNode foods = stationType.get("Items");
                 for(JsonNode food : foods) {
                     String foodName = food.get("Name").asText();
@@ -49,20 +48,46 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        System.out.println("Welcome to BoilerBites!");
-        try {
-            JsonNode root = fetchMenu("Wiley", "2026-11-23");
-            
-            String diningHallName = root.get("Location").asText();
-            String date = root.get("Date").asText();
+    System.out.println("Welcome to BoilerBites!");
+        LocalDate today = LocalDate.now();
+        String formattedDate = today.toString();
+        String[] diningHallLocs = {"Wiley", "Ford", "Earhart", "Windsor", "Hillenbrand"};
+        boolean vegPreference = false;
 
-            int menuCount = analyzeMenu(root, true);
-            System.out.println("Dining Hall: " + diningHallName);
-            System.out.println("Date: " + date);
-            System.out.println("Matching food items: " + menuCount);
-        } catch (IOException | InterruptedException exception) {
-            System.err.println("Unable to retrieve the Purdue dining menu: " + exception.getMessage());
+        System.out.println("Date: " + formattedDate);
+        System.out.println("Vegetarian Only: " + vegPreference);
+        System.out.println();
+
+        String bestHall = "";
+        int bestMatchCount = 0;
+        int menusAccessed = 0;
+
+        for(int i = 0; i < diningHallLocs.length; i++) {
+            try{
+                JsonNode temp = fetchMenu(diningHallLocs[i], formattedDate);
+                int menuCount = analyzeMenu(temp, vegPreference);
+                menusAccessed++;
+                if(menuCount > bestMatchCount ) {
+                    bestMatchCount = menuCount;
+                    bestHall = diningHallLocs[i];
+                }
+                System.out.println(diningHallLocs[i] + ": " + menuCount + " matching items");
+            } catch (IOException e) {
+                System.out.println(diningHallLocs[i] + ": Unable to retrieve menu. " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Menu retrieval interrupted.");
+                return;
+            }
+            
         }
-        
+        if(menusAccessed == 0) {
+            System.out.println("Unable to retrieve menu data.");
+        } else if (bestMatchCount == 0) {
+            System.out.println("No dining halls with matching food items were found.");
+        } else{
+            System.out.println("Recommended Dining Hall: " + bestHall);
+            System.out.println("Matching Food Items: " + bestMatchCount);
+        }
     }
 }
