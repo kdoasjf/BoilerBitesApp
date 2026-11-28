@@ -6,6 +6,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
+import java.util.Scanner;
 
 public class Main {
 
@@ -26,10 +27,14 @@ public class Main {
         return root;
     }
 
-    public static int analyzeMenu(JsonNode root, boolean vegOnly) {
+    public static int analyzeMenu(JsonNode root, boolean vegOnly, String selectedMeal) {
         JsonNode meals = root.get("Meals");
         int matchingCount = 0;
         for(JsonNode mealType : meals) {
+            String mealName = mealType.get("Name").asText();
+            if (!mealName.equalsIgnoreCase(selectedMeal)) {
+                continue;
+            }
             JsonNode station = mealType.get("Stations");
             for(JsonNode stationType : station) {
                 JsonNode foods = stationType.get("Items");
@@ -48,14 +53,59 @@ public class Main {
     }
 
     public static void main(String[] args) {
-    System.out.println("Welcome to BoilerBites!");
+        Scanner input = new Scanner(System.in);
         LocalDate today = LocalDate.now();
         String formattedDate = today.toString();
-        String[] diningHallLocs = {"Wiley", "Ford", "Earhart", "Windsor", "Hillenbrand"};
-        boolean vegPreference = false;
 
+        System.out.println("Welcome to BoilerBites!");
         System.out.println("Date: " + formattedDate);
+
+        
+        String vegOption;
+        do {
+            System.out.print("Are you vegetarian? (yes/no): ");
+            vegOption = input.nextLine();
+            vegOption = vegOption.trim().toLowerCase();
+
+            if(!vegOption.equals("yes") && !vegOption.equals("no")) {
+                System.out.println("Invalid option. Try again");
+            }
+
+        } while (!vegOption.equals("yes") && !vegOption.equals("no"));
+
+        boolean vegPreference = false;
+        if (vegOption.equals("yes")) {
+            vegPreference = true;
+        }
+
+
+
+        String mealChoice;
+        do {
+            System.out.print("Which meal are you looking for?\n1. Breakfast\n2. Lunch\n3. Dinner\nEnter your choice: ");
+            mealChoice = input.nextLine();
+            mealChoice = mealChoice.trim();
+
+            if(!mealChoice.equals("1") && !mealChoice.equals("2") && !mealChoice.equals("3")) {
+                System.out.println("Invalid option. Try again");
+            }
+
+        } while (!mealChoice.equals("1") && !mealChoice.equals("2") && !mealChoice.equals("3"));
+
+        if(mealChoice.equals("1")) {
+            mealChoice = "Breakfast";
+        } else if (mealChoice.equals("2")) {
+            mealChoice = "Lunch";
+        } else {
+            mealChoice = "Dinner";
+        }
+
+        
+        String[] diningHallLocs = {"Wiley", "Ford", "Earhart", "Windsor", "Hillenbrand"};
+
+        
         System.out.println("Vegetarian Only: " + vegPreference);
+        System.out.println("Selected Meal: " + mealChoice);
         System.out.println();
 
         String bestHall = "";
@@ -65,7 +115,7 @@ public class Main {
         for(int i = 0; i < diningHallLocs.length; i++) {
             try{
                 JsonNode temp = fetchMenu(diningHallLocs[i], formattedDate);
-                int menuCount = analyzeMenu(temp, vegPreference);
+                int menuCount = analyzeMenu(temp, vegPreference, mealChoice);
                 menusAccessed++;
                 if(menuCount > bestMatchCount ) {
                     bestMatchCount = menuCount;
@@ -89,5 +139,6 @@ public class Main {
             System.out.println("Recommended Dining Hall: " + bestHall);
             System.out.println("Matching Food Items: " + bestMatchCount);
         }
+        input.close();
     }
 }
