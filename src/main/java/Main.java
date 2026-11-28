@@ -27,9 +27,10 @@ public class Main {
         return root;
     }
 
-    public static int analyzeMenu(JsonNode root, boolean vegOnly, String selectedMeal) {
+    public static int[] analyzeMenu(JsonNode root, boolean vegOnly, String selectedMeal, String preference) {
         JsonNode meals = root.get("Meals");
         int matchingCount = 0;
+        int eligibleCount = 0;
         for(JsonNode mealType : meals) {
             String mealName = mealType.get("Name").asText();
             if (!mealName.equalsIgnoreCase(selectedMeal)) {
@@ -43,13 +44,16 @@ public class Main {
                     boolean isVeg = food.get("IsVegetarian").asBoolean();
                     boolean nutrition = food.get("NutritionReady").asBoolean();
                     if(!vegOnly || (isVeg && nutrition)) {
-                        matchingCount++;
+                        if(foodName.toLowerCase().contains(preference) || preference.isEmpty()) {
+                            matchingCount++;   
+                        }
+                        eligibleCount++;
                     }
                 }
             }
            
         }
-        return matchingCount;
+        return new int[]{matchingCount, eligibleCount};
     }
 
     public static void main(String[] args) {
@@ -57,8 +61,13 @@ public class Main {
         LocalDate today = LocalDate.now();
         String formattedDate = today.toString();
 
-        System.out.println("Welcome to BoilerBites!");
+        System.out.println("========================================");
+        System.out.println("              BOILERBITES");
+        System.out.println("       Purdue Dining Recommendation");
+        System.out.println("========================================");
+        System.out.println();
         System.out.println("Date: " + formattedDate);
+        System.out.println();
 
         
         String vegOption;
@@ -100,28 +109,45 @@ public class Main {
             mealChoice = "Dinner";
         }
 
+        System.out.print("What food are you craving?\n(Press enter if you have no preference): ");
+        String preference = input.nextLine();
+        preference = preference.trim().toLowerCase();
+
         
         String[] diningHallLocs = {"Wiley", "Ford", "Earhart", "Windsor", "Hillenbrand"};
 
-        
-        System.out.println("Vegetarian Only: " + vegPreference);
-        System.out.println("Selected Meal: " + mealChoice);
         System.out.println();
+        System.out.println("------------ YOUR PREFERENCES ----------");
+        System.out.printf("%-18s %s%n", "Vegetarian Only:", vegPreference);
+        System.out.printf("%-18s %s%n", "Selected Meal:", mealChoice);
+        System.out.printf("%-18s %s%n", "Food Preference:", preference);
+        System.out.println("----------------------------------------");
+        System.out.println();
+        System.out.println("Analyzing dining halls...");
+
 
         String bestHall = "";
+        String altHall = "";
+        int altEligibleCount = 0;
         int bestMatchCount = 0;
         int menusAccessed = 0;
+        int bestEligibleCount = 0;
 
         for(int i = 0; i < diningHallLocs.length; i++) {
             try{
                 JsonNode temp = fetchMenu(diningHallLocs[i], formattedDate);
-                int menuCount = analyzeMenu(temp, vegPreference, mealChoice);
+                int[] menuCount = analyzeMenu(temp, vegPreference, mealChoice, preference);
                 menusAccessed++;
-                if(menuCount > bestMatchCount ) {
-                    bestMatchCount = menuCount;
+                if(menuCount[0] > bestMatchCount) {
+                    bestMatchCount = menuCount[0];
                     bestHall = diningHallLocs[i];
+                    bestEligibleCount = menuCount[1];
                 }
-                System.out.println(diningHallLocs[i] + ": " + menuCount + " matching items");
+                if(menuCount[1] > altEligibleCount) {
+                    altHall = diningHallLocs[i];
+                    altEligibleCount = menuCount[1];
+                }
+                System.out.printf("%-12s %3d eligible | %3d preferred%n", diningHallLocs[i], menuCount[1], menuCount[0]);
             } catch (IOException e) {
                 System.out.println(diningHallLocs[i] + ": Unable to retrieve menu. " + e.getMessage());
             } catch (InterruptedException e) {
@@ -133,12 +159,57 @@ public class Main {
         }
         if(menusAccessed == 0) {
             System.out.println("Unable to retrieve menu data.");
+        } else if (altEligibleCount == 0) {
+            System.out.println("No dining halls with matching/eligible food items were found.");
         } else if (bestMatchCount == 0) {
-            System.out.println("No dining halls with matching food items were found.");
-        } else{
-            System.out.println("Recommended Dining Hall: " + bestHall);
-            System.out.println("Matching Food Items: " + bestMatchCount);
+            System.out.println();
+            System.out.println("========================================");
+            System.out.println("          NO PREFERRED MATCHES");
+            System.out.println("========================================");
+            System.out.println();
+
+            System.out.printf("No food items matching \"%s\" were found%n", preference);
+            System.out.println("for your selected meal and dietary preference.");
+            System.out.println();
+
+            System.out.println("However, other eligible food options are available.");
+            System.out.println();
+
+            System.out.printf("Alternative Dining Hall: %s%n", altHall);
+            System.out.printf("Total Eligible Options: %d%n", altEligibleCount);
+            System.out.println();
+
+            System.out.println("Reason:");
+            System.out.printf("%s offers the most eligible food options%n", altHall);
+            System.out.println("for your selected meal and dietary preference.");
+            System.out.println();
+
+            System.out.println("Try another keyword or explore these alternatives.");
+        } else {
+            System.out.println();
+            System.out.println("========================================");
+            System.out.println("          YOUR RECOMMENDATION");
+            System.out.println("========================================");
+            System.out.println();
+
+            System.out.printf("Recommended Dining Hall: %s%n", bestHall);
+            System.out.println();
+            System.out.println("Reason: ");
+            if(preference.equals("")) {
+                System.out.printf("%s has the most eligible food options%n", bestHall);
+                System.out.println("for your selected meal and dietary preference (since no preference was set).");
+            } else {
+                System.out.printf("%s has the most matching \"%s\" options%n", bestHall, preference);
+                System.out.println("for your selected meal and dietary preference.");
+            }
+            System.out.println();
+            System.out.printf("Preferred Food Matches: %d%n", bestMatchCount);
+            System.out.printf("Total Eligible Options: %d%n", bestEligibleCount);
+            System.out.println();
+            System.out.println("Enjoy your meal!");
         }
+        
+        System.out.println("========================================");
         input.close();
     }
 }
